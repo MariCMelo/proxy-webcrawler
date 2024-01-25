@@ -26,6 +26,8 @@ _UpgradeReport_Files/
 bin/
 obj/
 TestResults/
+htmls/
+All_Proxies.json
 ###################
 # Web publish log #
 ###################
