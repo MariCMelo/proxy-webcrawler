@@ -1,12 +1,6 @@
 using HtmlAgilityPack;
-using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
-using MongoDB.Bson;
-using MongoDB.Driver;
 
 namespace Webcrawler
 {
@@ -28,8 +22,9 @@ namespace Webcrawler
         }
 
         public void GetPagesSource(string url)
-        {
+        {   // Record the start time of execution
             executionStart = DateTime.Now;
+
             string originalUrl = url;
             using (ChromeDriver driver = new ChromeDriver(options))
             {
@@ -56,6 +51,7 @@ namespace Webcrawler
 
         public void ExportHtml()
         {
+            //Check if the "htmls" directory exists; if not, create it
             string directoryPath = "htmls";
 
             if (!Directory.Exists(directoryPath))
@@ -63,13 +59,14 @@ namespace Webcrawler
                 Directory.CreateDirectory(directoryPath);
             }
 
+            // Save each HTML page string to a file
             for (int i = 0; i < htmlList.Count; i++)
             {
                 string html = htmlList[i];
                 string fileName = $"page_{i + 1}.html";
                 string filePath = Path.Combine(directoryPath, fileName);
 
-                // Salva o HTML em um arquivo .html
+                // Save the HTML to an .html file.
                 File.WriteAllText(filePath, html);
                 // Console.WriteLine($"HTML {i + 1} salvo em: {filePath}");
             }
@@ -80,6 +77,7 @@ namespace Webcrawler
             var htmlDocument = new HtmlDocument();
             string html = "";
 
+            //Extract proxy informations from HTML and group them.
             for (int i = 0; i < htmlList.Count; i++)
             {
                 html = htmlList[i];
@@ -90,20 +88,24 @@ namespace Webcrawler
                 var countryElements = htmlDocument.DocumentNode.SelectNodes("//img[@class='icon-flag']");
                 var protocolElements = htmlDocument.DocumentNode.SelectNodes("//tr/td[last()-1]");
 
-                PrintProxyInfo(ipAddressElements, portElements, countryElements, protocolElements);
+                GroupProxyInfo(ipAddressElements, portElements, countryElements, protocolElements);
             }
+            // Record the total number of lines in the JSON archive
             totalLines = rowsList.Count;
 
+            // Create a JSON file containing proxy information for all pages
             string jsonResult = JsonSerializer.Serialize(rowsList, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText("All_Proxies.json", jsonResult);
+
+            // Record the end time of execution
             executionEnd = DateTime.Now;
         }
 
-        private void PrintProxyInfo(HtmlNodeCollection ipAddressElements, HtmlNodeCollection portElements, HtmlNodeCollection countryElements, HtmlNodeCollection protocolElements)
+        private void GroupProxyInfo(HtmlNodeCollection ipAddressElements, HtmlNodeCollection portElements, HtmlNodeCollection countryElements, HtmlNodeCollection protocolElements)
         {
             if (ipAddressElements != null && portElements != null && countryElements != null && protocolElements != null)
             {
-
+                //Create objects with proxy informations add them to a list
                 for (int i = 0; i < ipAddressElements.Count; i++)
                 {
                     var ipAddress = ipAddressElements[i].InnerText.Trim();
@@ -123,6 +125,7 @@ namespace Webcrawler
             }
         }
 
+        // Save execution details to MongoDB log
         public void SaveLog()
         {
             Dictionary<string, object> log = new Dictionary<string, object>
