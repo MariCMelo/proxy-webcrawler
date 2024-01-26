@@ -12,20 +12,50 @@ Navegue até o diretório do projeto.
 
 `cd proxy-webcrawler`
 
-Execute o projeto.
 
-`dotnet run`
 
 Realize a instalação das dependências
 
 `dotnet restore`
 
-Certifique-se de ter o [.NET SDK](https://dotnet.microsoft.com/download) instalado em sua máquina.
+Certifique-se de ter [.NET SDK](https://dotnet.microsoft.com/download) e  MongoDb instalados em sua máquina.
+
+Executar o MongoDb em um terminal separado
+
+`mongod`
+
+Execute o projeto.
+
+`dotnet run`
 
 ## Configurações Adicionais
 Certifique-se de ter as configurações necessárias para o Selenium, incluindo a instalação do Google Chrome e ChromeDriver.
 
 Tenha em mente que estas instruções são básicas e podem precisar ser ajustadas com base nos detalhes específicos do seu ambiente e projeto. Consulte a documentação oficial das bibliotecas utilizadas para informações mais detalhadas.
+
+
+## Acesso ao banco de dados
+
+Através do terminal digite os comandos:
+
+Abrir o shell do MongoDb
+`mongosh`
+
+Procurar as databases
+
+`show dbs`
+
+Selecionar o banco de dados do projeto
+
+`use webcrawlerLogs`
+
+Listar coleções do banco de dados
+
+`show collections`
+
+Exibir registros da coleção webcrawler_logs
+
+`db.webcrawler_logs.find()`
 
 ## Funcionalidades
 
@@ -36,5 +66,3 @@ Tenha em mente que estas instruções são básicas e podem precisar ser ajustad
 -Armazenamento de informações relevantes em um banco de dados.
 
 -Captura de prints (arquivos .html) de cada página visitada.
-
-

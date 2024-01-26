@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace Webcrawler
 {
@@ -13,14 +15,21 @@ namespace Webcrawler
         private readonly ChromeOptions options;
         private readonly List<Dictionary<string, object>> rowsList = new List<Dictionary<string, object>>();
         private readonly List<string> htmlList = new List<string>();
+        private DateTime executionStart;
+        private DateTime executionEnd;
+        private int lastNumber;
+        private int totalLines;
+        private MongoDbConnector mongodb;
 
         public WebCrawler(ChromeOptions options)
         {
             this.options = options;
+            this.mongodb = new MongoDbConnector("mongodb://localhost:27017", "webcrawlerLogs");
         }
 
         public void GetPagesSource(string url)
         {
+            executionStart = DateTime.Now;
             string originalUrl = url;
             using (ChromeDriver driver = new ChromeDriver(options))
             {
@@ -33,7 +42,7 @@ namespace Webcrawler
 
                 var pagesNumbers = htmlDocument.DocumentNode.SelectNodes("//li[@class='page-item']");
                 var lastPageNumber = pagesNumbers[pagesNumbers.Count - 1];
-                int lastNumber = int.Parse(lastPageNumber.InnerText.Trim());
+                lastNumber = int.Parse(lastPageNumber.InnerText.Trim());
 
                 for (int i = 2; i <= lastNumber; i++)
                 {
@@ -62,7 +71,7 @@ namespace Webcrawler
 
                 // Salva o HTML em um arquivo .html
                 File.WriteAllText(filePath, html);
-                Console.WriteLine($"HTML {i + 1} salvo em: {filePath}");
+                // Console.WriteLine($"HTML {i + 1} salvo em: {filePath}");
             }
         }
 
@@ -83,11 +92,11 @@ namespace Webcrawler
 
                 PrintProxyInfo(ipAddressElements, portElements, countryElements, protocolElements);
             }
-            Console.WriteLine(rowsList.Count);
+            totalLines = rowsList.Count;
 
             string jsonResult = JsonSerializer.Serialize(rowsList, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText("All_Proxies.json", jsonResult);
-            // Console.WriteLine(jsonResult);
+            executionEnd = DateTime.Now;
         }
 
 
@@ -114,6 +123,18 @@ namespace Webcrawler
                 }
             }
         }
+        public void SaveLog()
+        {
+            Dictionary<string, object> log = new Dictionary<string, object>
+            {
+                {"start_time", executionStart},
+                {"end_time", executionEnd},
+                {"total_pages", lastNumber},
+                {"total_rows", totalLines}
+            };
+            mongodb.AddLog(log);
+            Console.WriteLine("Process completed successfully!");
+        }
     }
 
     class Program
@@ -125,9 +146,11 @@ namespace Webcrawler
 
             var webCrawler = new WebCrawler(options);
             string url = "https://proxyservers.pro/proxy/list/order/updated/order_dir/desc";
+
             webCrawler.GetPagesSource(url);
             webCrawler.ExportHtml();
             webCrawler.ExtractProxyInfo();
+            webCrawler.SaveLog();
         }
     }
 }
