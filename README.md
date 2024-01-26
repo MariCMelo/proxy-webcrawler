@@ -18,12 +18,12 @@ Realize a instalação das dependências
 
 Certifique-se de ter [.NET SDK](https://dotnet.microsoft.com/download) e MongoDb instalados em sua máquina.
 
-Crie um arquivo `appsettings.json` na raiz do projto
+Crie um arquivo `appsettings.json` na raiz do projeto
 
 ```
 {
     "MongoDbConnection": {
-      "ConnectionString": "mongodb://<MongoDB_IP_HOST>:<MongoDB_Port>",
+      "ConnectionString": "mongodb://<MongoDB_IP_Host>:<MongoDB_Port>",
       "Database": "<Collection_Name>"
     }
   }
