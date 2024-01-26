@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using HtmlAgilityPack;
 using OpenQA.Selenium.Chrome;
 using System.Text.Json;
@@ -14,65 +15,78 @@ namespace Webcrawler
         private int lastNumber;
         private int totalLines;
         private MongoDbConnector mongodb;
+        IConfiguration configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json") // Nome do seu arquivo de configuração
+                .Build();
 
         public WebCrawler(ChromeOptions options)
         {
             this.options = options;
-            this.mongodb = new MongoDbConnector("mongodb://localhost:27017", "webcrawlerLogs");
+            var connectionString = this.configuration.GetSection("MongoDbConnection:ConnectionString").Value;
+            var database = this.configuration.GetSection("MongoDbConnection:Database").Value;
+
+            if (connectionString == null || database == null)
+            {
+                connectionString = "mongodb://localhost:27017";
+                database = "webcrawlerLogs";
+            }
+
+            this.mongodb = new MongoDbConnector(connectionString, database);
         }
 
-  public void GetPagesSource(string url)
-{
-    // Record the start time of execution
-    executionStart = DateTime.Now;
-
-    string originalUrl = url;
-    using (ChromeDriver driver = new ChromeDriver(options))
-    {
-        var htmlDocument = new HtmlDocument();
-
-        // Limit the number of concurrent threads using a semaphore
-        var semaphore = new SemaphoreSlim(3); 
-        driver.Navigate().GoToUrl(url);
-        string html = driver.PageSource;
-        htmlList.Add(html);
-        htmlDocument.LoadHtml(html);
-
-         // Extract page numbers from the HTML
-        var pagesNumbers = htmlDocument.DocumentNode.SelectNodes("//li[@class='page-item']");
-        var lastPageNumber = pagesNumbers[pagesNumbers.Count - 1];
-        lastNumber = int.Parse(lastPageNumber.InnerText.Trim());
-
-        // List to store tasks for asynchronous execution
-        List<Task> tasks = new List<Task>();
-
-        for (int i = 2; i <= lastNumber; i++)
+        public void GetPagesSource(string url)
         {
-            int pageNumber = i; 
-            string pageUrl = originalUrl + "/page/" + pageNumber;
+            // Record the start time of execution
+            executionStart = DateTime.Now;
 
-             // Add a task for asynchronous execution
-            tasks.Add(Task.Run(async () =>
-            {   
-               
-                await semaphore.WaitAsync();
-                try
+            string originalUrl = url;
+            using (ChromeDriver driver = new ChromeDriver(options))
+            {
+                var htmlDocument = new HtmlDocument();
+
+                // Limit the number of concurrent threads using a semaphore
+                var semaphore = new SemaphoreSlim(3);
+                driver.Navigate().GoToUrl(url);
+                string html = driver.PageSource;
+                htmlList.Add(html);
+                htmlDocument.LoadHtml(html);
+
+                // Extract page numbers from the HTML
+                var pagesNumbers = htmlDocument.DocumentNode.SelectNodes("//li[@class='page-item']");
+                var lastPageNumber = pagesNumbers[pagesNumbers.Count - 1];
+                lastNumber = int.Parse(lastPageNumber.InnerText.Trim());
+
+                // List to store tasks for asynchronous execution
+                List<Task> tasks = new List<Task>();
+
+                for (int i = 2; i <= lastNumber; i++)
                 {
-                    driver.Navigate().GoToUrl(pageUrl);
-                    string pageHtml = driver.PageSource;
-                    htmlList.Add(pageHtml);
+                    int pageNumber = i;
+                    string pageUrl = originalUrl + "/page/" + pageNumber;
+
+                    // Add a task for asynchronous execution
+                    tasks.Add(Task.Run(async () =>
+                    {
+
+                        await semaphore.WaitAsync();
+                        try
+                        {
+                            driver.Navigate().GoToUrl(pageUrl);
+                            string pageHtml = driver.PageSource;
+                            htmlList.Add(pageHtml);
+                        }
+                        finally
+                        {
+                            // Release the semaphore to allow another thread to proceed
+                            semaphore.Release();
+                        }
+                    }));
                 }
-                finally
-                { 
-                    // Release the semaphore to allow another thread to proceed
-                    semaphore.Release(); 
-                }
-            }));
+                // Wait for all tasks to complete before proceeding
+                Task.WaitAll(tasks.ToArray());
+            }
         }
-        // Wait for all tasks to complete before proceeding
-        Task.WaitAll(tasks.ToArray()); 
-    }
-}
         public void ExportHtml()
         {
             //Check if the "htmls" directory exists; if not, create it

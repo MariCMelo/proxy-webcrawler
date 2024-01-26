@@ -12,13 +12,21 @@ Navegue até o diretório do projeto.
 
 `cd proxy-webcrawler`
 
-
-
 Realize a instalação das dependências
 
 `dotnet restore`
 
-Certifique-se de ter [.NET SDK](https://dotnet.microsoft.com/download) e  MongoDb instalados em sua máquina.
+Certifique-se de ter [.NET SDK](https://dotnet.microsoft.com/download) e MongoDb instalados em sua máquina.
+
+Crie um arquivo `appsettings.json` na raiz do projto
+
+`{
+    "MongoDbConnection": {
+      "ConnectionString": "mongodb://<MongoDB_IP_HOST>:<MongoDB_Port>",
+      "Database": "<Collection_Name>"
+    }
+  }
+  `
 
 Executar o MongoDb em um terminal separado
 
@@ -29,10 +37,10 @@ Execute o projeto.
 `dotnet run`
 
 ## Configurações Adicionais
+
 Certifique-se de ter as configurações necessárias para o Selenium, incluindo a instalação do Google Chrome e ChromeDriver.
 
 Tenha em mente que estas instruções são básicas e podem precisar ser ajustadas com base nos detalhes específicos do seu ambiente e projeto. Consulte a documentação oficial das bibliotecas utilizadas para informações mais detalhadas.
-
 
 ## Acesso ao banco de dados
 

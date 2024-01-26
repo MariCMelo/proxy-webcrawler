@@ -28,6 +28,7 @@ obj/
 TestResults/
 htmls/
 All_Proxies.json
+appsettings.json
 ###################
 # Web publish log #
 ###################
