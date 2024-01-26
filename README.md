@@ -20,14 +20,15 @@ Certifique-se de ter [.NET SDK](https://dotnet.microsoft.com/download) e MongoDb
 
 Crie um arquivo `appsettings.json` na raiz do projto
 
-`{
+```
+{
     "MongoDbConnection": {
       "ConnectionString": "mongodb://<MongoDB_IP_HOST>:<MongoDB_Port>",
       "Database": "<Collection_Name>"
     }
   }
-  `
-
+  ```
+  
 Executar o MongoDb em um terminal separado
 
 `mongod`
